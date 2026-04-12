@@ -1,3 +1,5 @@
+"""Environment-backed configuration for adapters (infrastructure), not a separate layer."""
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict

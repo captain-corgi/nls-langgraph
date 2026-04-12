@@ -1,3 +1,5 @@
+"""Outbound port for read-only SQL access (hexagonal); adapters implement this ABC."""
+
 from abc import ABC, abstractmethod
 from typing import Any
 

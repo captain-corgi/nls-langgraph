@@ -68,8 +68,6 @@ nl_sql_chatbot/                              # Python package root (run API/CLI/
 │   │   ├── __init__.py
 │   │   ├── sql_database_port.py             # ABC SqlDatabasePort
 │   │   └── chat_history_port.py             # ABC ChatHistoryPort
-│   └── use_cases/
-│       └── __init__.py
 │
 ├── infrastructure/                          # 🟡 Implements domain ABCs + settings
 │   ├── __init__.py

@@ -3,3 +3,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
+
+# IDE / editor / OS noise
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
