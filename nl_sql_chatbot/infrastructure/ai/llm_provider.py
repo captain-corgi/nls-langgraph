@@ -1,7 +1,7 @@
 from langchain_openai import ChatOpenAI
 from langchain_core.language_models import BaseChatModel
 
-from config import get_settings
+from infrastructure.settings import get_settings
 
 
 def create_llm(

@@ -52,11 +52,12 @@ The domain layer has ZERO external library imports.
 ## Directory Structure (create every file listed)
 
 ```
-nl_sql_chatbot/
-├── config/
-│   ├── __init__.py                          # exports Settings, get_settings
-│   └── settings.py                          # pydantic-settings BaseSettings
+# Repository root (workspace)
+├── pyproject.toml                           # pytest pythonpath → nl_sql_chatbot/
+├── tests/
+│   └── test_domain.py                       # Unit tests: domain + InMemoryChatRepository
 │
+nl_sql_chatbot/                              # Python package root (run API/CLI/seed from here)
 ├── domain/                                  # 🔴 Pure Python — no frameworks
 │   ├── __init__.py
 │   ├── entities/
@@ -70,8 +71,9 @@ nl_sql_chatbot/
 │   └── use_cases/
 │       └── __init__.py
 │
-├── infrastructure/                          # 🟡 Implements domain ABCs
+├── infrastructure/                          # 🟡 Implements domain ABCs + settings
 │   ├── __init__.py
+│   ├── settings.py                          # pydantic-settings BaseSettings, get_settings()
 │   ├── ai/
 │   │   ├── __init__.py
 │   │   ├── llm_provider.py                  # create_llm() factory
@@ -113,10 +115,6 @@ nl_sql_chatbot/
 │   └── cli/
 │       ├── __init__.py
 │       └── chat_cli.py                      # Interactive REPL with streaming output
-│
-├── tests/
-│   ├── __init__.py
-│   └── test_domain.py                       # Unit tests: ChatMessage, QueryResult, InMemoryChatRepository
 │
 ├── data/                                    # Auto-created by seed.py
 ├── .env.example
@@ -164,7 +162,7 @@ AGENT_MAX_ITERATIONS=10
 
 ---
 
-### `config/settings.py`
+### `infrastructure/settings.py`
 Use `pydantic_settings.BaseSettings` with `SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")`.
 
 Fields:

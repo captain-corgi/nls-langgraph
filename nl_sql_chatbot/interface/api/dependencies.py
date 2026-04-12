@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from application.agents.sql_agent import SqlAgent
-from config import get_settings
+from infrastructure.settings import get_settings
 from infrastructure.database.sql_database_repository import SqlDatabaseRepository
 from infrastructure.memory.chat_memory_repository import InMemoryChatRepository
 

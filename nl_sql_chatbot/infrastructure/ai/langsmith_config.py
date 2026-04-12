@@ -1,6 +1,6 @@
 import os
 
-from config import get_settings
+from infrastructure.settings import get_settings
 
 
 def configure_langsmith() -> None:

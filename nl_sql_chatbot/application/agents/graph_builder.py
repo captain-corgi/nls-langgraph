@@ -7,7 +7,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 
 from application.agents.state import AgentState
 from application.prompts.sql_prompts import SYSTEM_PROMPT_TEMPLATE
-from config import get_settings
+from infrastructure.settings import get_settings
 
 
 def build_graph(

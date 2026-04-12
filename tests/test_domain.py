@@ -1,9 +1,5 @@
-import sys
-from pathlib import Path
 from datetime import datetime
 from uuid import UUID
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from domain.entities.chat_message import ChatMessage, MessageRole
 from domain.entities.query_result import QueryResult
