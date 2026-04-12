@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.env
+data/
+*.db
+.pytest_cache/
+
+# IDE / editor / OS noise
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store

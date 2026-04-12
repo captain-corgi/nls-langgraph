@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# IDE / editor / OS noise
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
+
+# Cursor IDE — machine-local hook state (absolute paths; must not be committed)
+.cursor/hooks/state/
