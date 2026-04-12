@@ -5,14 +5,14 @@ from langchain_core.messages import AIMessage, HumanMessage
 from application.agents.graph_builder import build_graph
 from application.tools.sql_tools import build_sql_tools
 from domain.entities.chat_message import ChatMessage, MessageRole
-from domain.repositories.chat_repository import ChatRepository
+from domain.ports.chat_history_port import ChatHistoryPort
 from infrastructure.ai.llm_provider import create_llm
-from infrastructure.database.sql_database_repository import SqlDatabaseRepository
+from infrastructure.database.sql_database_adapter import SqlDatabaseAdapter
 
 
 class SqlAgent:
     def __init__(
-        self, db_repo: SqlDatabaseRepository, chat_repo: ChatRepository
+        self, db_repo: SqlDatabaseAdapter, chat_repo: ChatHistoryPort
     ) -> None:
         self._db_repo = db_repo
         self._chat_repo = chat_repo

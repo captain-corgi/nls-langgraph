@@ -55,7 +55,7 @@ The domain layer has ZERO external library imports.
 # Repository root (workspace)
 ├── pyproject.toml                           # pytest pythonpath → nl_sql_chatbot/
 ├── tests/
-│   └── test_domain.py                       # Unit tests: domain + InMemoryChatRepository
+│   └── test_domain.py                       # Unit tests: domain + InMemoryChatHistory
 │
 nl_sql_chatbot/                              # Python package root (run API/CLI/seed from here)
 ├── domain/                                  # 🔴 Pure Python — no frameworks
@@ -64,10 +64,10 @@ nl_sql_chatbot/                              # Python package root (run API/CLI/
 │   │   ├── __init__.py                      # exports ChatMessage, MessageRole, QueryResult
 │   │   ├── chat_message.py                  # @dataclass ChatMessage + MessageRole enum
 │   │   └── query_result.py                  # @dataclass QueryResult
-│   ├── repositories/
+│   ├── ports/                               # Outbound port interfaces (hexagonal)
 │   │   ├── __init__.py
-│   │   ├── database_repository.py           # ABC DatabaseRepository
-│   │   └── chat_repository.py               # ABC ChatRepository
+│   │   ├── sql_database_port.py             # ABC SqlDatabasePort
+│   │   └── chat_history_port.py             # ABC ChatHistoryPort
 │   └── use_cases/
 │       └── __init__.py
 │
@@ -80,11 +80,11 @@ nl_sql_chatbot/                              # Python package root (run API/CLI/
 │   │   └── langsmith_config.py              # configure_langsmith()
 │   ├── database/
 │   │   ├── __init__.py
-│   │   ├── sql_database_repository.py       # SqlDatabaseRepository(DatabaseRepository)
+│   │   ├── sql_database_adapter.py          # SqlDatabaseAdapter(SqlDatabasePort)
 │   │   └── seed.py                          # SQLite seeder for dev
 │   └── memory/
 │       ├── __init__.py
-│       └── chat_memory_repository.py        # InMemoryChatRepository(ChatRepository)
+│       └── in_memory_chat_history.py        # InMemoryChatHistory(ChatHistoryPort)
 │
 ├── application/                             # 🟢 LangGraph orchestration
 │   ├── __init__.py
@@ -224,9 +224,9 @@ class QueryResult:
     def to_dict(self) -> dict: ...
 ```
 
-### `domain/repositories/database_repository.py`
+### `domain/ports/sql_database_port.py`
 ```python
-class DatabaseRepository(ABC):
+class SqlDatabasePort(ABC):
     @abstractmethod def get_table_names(self) -> list[str]: ...
     @abstractmethod def get_table_schema(self, table_name: str) -> str: ...
     @abstractmethod def get_all_schemas(self) -> str: ...
@@ -234,9 +234,9 @@ class DatabaseRepository(ABC):
     @abstractmethod def get_sample_rows(self, table_name: str, n: int = 3) -> list[dict]: ...
 ```
 
-### `domain/repositories/chat_repository.py`
+### `domain/ports/chat_history_port.py`
 ```python
-class ChatRepository(ABC):
+class ChatHistoryPort(ABC):
     @abstractmethod def save_message(self, session_id: str, message: ChatMessage) -> None: ...
     @abstractmethod def get_history(self, session_id: str) -> list[ChatMessage]: ...
     @abstractmethod def clear_session(self, session_id: str) -> None: ...
@@ -260,12 +260,12 @@ def configure_langsmith() -> None:
     # Prints status message.
 ```
 
-### `infrastructure/database/sql_database_repository.py`
-Concrete implementation of `DatabaseRepository`. Key details:
+### `infrastructure/database/sql_database_adapter.py`
+Concrete implementation of `SqlDatabasePort`. Key details:
 - Constructor: `__init__(self, database_url: str, max_rows: int = 100)`
 - Use `SQLDatabase.from_uri(database_url, sample_rows_in_table_info=3)` for schema introspection
 - Reuse `self._db._engine` for raw SQLAlchemy query execution
-- `execute_query` uses `sqlalchemy.text`, fetches with `fetchmany(self._max_rows)`, times with `perf_counter`, returns `(rows, elapsed_ms)` tuple
+- `execute_query` uses `sqlalchemy.text`, fetches with `fetchmany(self._max_rows)`, returns a list of row dicts
 - `get_langchain_db(self) -> SQLDatabase` — exposes the LangChain wrapper for use in tools
 
 ### `infrastructure/database/seed.py`
@@ -281,9 +281,9 @@ CREATE TABLE order_items (id INTEGER PK, order_id FK, product_id FK, quantity IN
 Seed 5 customers, 6 products, 7 orders, 10 order_items.
 Expose a `seed()` function and `if __name__ == "__main__": seed()`.
 
-### `infrastructure/memory/chat_memory_repository.py`
+### `infrastructure/memory/in_memory_chat_history.py`
 ```python
-class InMemoryChatRepository(ChatRepository):
+class InMemoryChatHistory(ChatHistoryPort):
     # Uses defaultdict(list) keyed by session_id
     # Also implement list_sessions(self) -> list[str]
 ```
@@ -311,7 +311,7 @@ Content must include:
 
 ### `application/tools/sql_tools.py`
 ```python
-def build_sql_tools(db_repo: SqlDatabaseRepository) -> list[BaseTool]:
+def build_sql_tools(db_repo: SqlDatabaseAdapter) -> list[BaseTool]:
     # Returns [ListSQLDatabaseTool, InfoSQLDatabaseTool,
     #          QuerySQLDataBaseTool, QuerySQLCheckerTool]
     # All initialized with db_repo.get_langchain_db()
@@ -352,7 +352,7 @@ High-level facade. Constructor wires everything:
 
 ```python
 class SqlAgent:
-    def __init__(self, db_repo: SqlDatabaseRepository, chat_repo: ChatRepository):
+    def __init__(self, db_repo: SqlDatabaseAdapter, chat_repo: ChatHistoryPort):
         # create_llm() → build_sql_tools(db_repo) → db_repo.get_all_schemas()
         # → build_graph(llm, tools, schema) → self._graph
 
@@ -396,8 +396,8 @@ class HealthResponse(BaseModel):
 ### `interface/api/dependencies.py`
 Three `@lru_cache` singleton factories:
 ```python
-def get_db_repo() -> SqlDatabaseRepository: ...
-def get_chat_repo() -> InMemoryChatRepository: ...
+def get_db_repo() -> SqlDatabaseAdapter: ...
+def get_chat_repo() -> InMemoryChatHistory: ...
 def get_agent() -> SqlAgent: ...
 ```
 
@@ -449,7 +449,7 @@ Write pytest test classes (no mocks, no LLM calls, no I/O):
 - `test_failure_property` — error set → success=False
 - `test_to_dict` — keys: sql, success present
 
-**`TestInMemoryChatRepository`**
+**`TestInMemoryChatHistory`**
 - `test_save_and_retrieve` — 2 messages saved, 2 returned in order
 - `test_sessions_are_isolated` — session-A and session-B don't bleed
 - `test_clear_session` — after clear, get_history returns []
@@ -567,14 +567,14 @@ graph TB
 
     subgraph infrastructure["🟡 Infrastructure Layer"]
         LLMPROV["LlmProvider (OpenAI)"]
-        DBREPO["SqlDatabaseRepository"]
-        CHATREP["InMemoryChatRepository"]
+        DBREPO["SqlDatabaseAdapter"]
+        CHATREP["InMemoryChatHistory"]
         SMITH["LangSmith Config"]
     end
 
     subgraph domain["🔴 Domain Layer"]
         ENT["ChatMessage · QueryResult"]
-        REPOS["DatabaseRepository ABC\nChatRepository ABC"]
+        REPOS["SqlDatabasePort ABC\nChatHistoryPort ABC"]
     end
 
     CLI --> DEP
@@ -628,7 +628,7 @@ pytest tests/ -v
 ## Strict Rules to Follow
 
 1. **Domain has zero external imports** — only Python stdlib (`abc`, `dataclasses`, `datetime`, `enum`, `uuid`, `typing`)
-2. **Infrastructure implements domain ABCs** — `SqlDatabaseRepository(DatabaseRepository)`, `InMemoryChatRepository(ChatRepository)`
+2. **Infrastructure implements domain ports** — `SqlDatabaseAdapter(SqlDatabasePort)`, `InMemoryChatHistory(ChatHistoryPort)`
 3. **Application layer only imports from** `domain/`, `infrastructure/` (for concrete types needed at wiring), and LangChain/LangGraph
 4. **Interface layer only imports from** `application/`, `infrastructure/` (via DI), and FastAPI/Pydantic
 5. **No circular imports** — enforce with the dependency rule diagram above

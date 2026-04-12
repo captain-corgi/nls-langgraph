@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from application.agents.sql_agent import SqlAgent
-from infrastructure.database.sql_database_repository import SqlDatabaseRepository
+from infrastructure.database.sql_database_adapter import SqlDatabaseAdapter
 from interface.api.dependencies import get_agent, get_db_repo
 from interface.api.schemas.chat_schema import (
     ChatRequest,
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.get("/health", response_model=HealthResponse)
-def health(db_repo: SqlDatabaseRepository = Depends(get_db_repo)) -> HealthResponse:
+def health(db_repo: SqlDatabaseAdapter = Depends(get_db_repo)) -> HealthResponse:
     try:
         tables = db_repo.get_table_names()
         return HealthResponse(status="ok", tables=tables)

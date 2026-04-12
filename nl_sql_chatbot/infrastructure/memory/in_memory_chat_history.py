@@ -1,10 +1,10 @@
 from collections import defaultdict
 
 from domain.entities.chat_message import ChatMessage
-from domain.repositories.chat_repository import ChatRepository
+from domain.ports.chat_history_port import ChatHistoryPort
 
 
-class InMemoryChatRepository(ChatRepository):
+class InMemoryChatHistory(ChatHistoryPort):
     def __init__(self) -> None:
         self._store: dict[str, list[ChatMessage]] = defaultdict(list)
 

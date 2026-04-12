@@ -4,19 +4,19 @@ import uuid
 from application.agents.sql_agent import SqlAgent
 from infrastructure.settings import get_settings
 from infrastructure.ai.langsmith_config import configure_langsmith
-from infrastructure.database.sql_database_repository import SqlDatabaseRepository
-from infrastructure.memory.chat_memory_repository import InMemoryChatRepository
+from infrastructure.database.sql_database_adapter import SqlDatabaseAdapter
+from infrastructure.memory.in_memory_chat_history import InMemoryChatHistory
 
 
 def run() -> None:
     configure_langsmith()
     settings = get_settings()
 
-    db_repo = SqlDatabaseRepository(
+    db_repo = SqlDatabaseAdapter(
         database_url=settings.database_url,
         max_rows=settings.max_query_results,
     )
-    chat_repo = InMemoryChatRepository()
+    chat_repo = InMemoryChatHistory()
     agent = SqlAgent(db_repo=db_repo, chat_repo=chat_repo)
 
     session_id = str(uuid.uuid4())

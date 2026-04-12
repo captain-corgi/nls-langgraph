@@ -1,13 +1,12 @@
-from time import perf_counter
 from typing import Any
 
 import sqlalchemy
 from langchain_community.utilities import SQLDatabase
 
-from domain.repositories.database_repository import DatabaseRepository
+from domain.ports.sql_database_port import SqlDatabasePort
 
 
-class SqlDatabaseRepository(DatabaseRepository):
+class SqlDatabaseAdapter(SqlDatabasePort):
     def __init__(self, database_url: str, max_rows: int = 100):
         self._database_url = database_url
         self._max_rows = max_rows
@@ -22,22 +21,16 @@ class SqlDatabaseRepository(DatabaseRepository):
     def get_all_schemas(self) -> str:
         return self._db.get_table_info()
 
-    def execute_query(self, sql: str) -> tuple[list[dict[str, Any]], float]:
+    def execute_query(self, sql: str) -> list[dict[str, Any]]:
         engine = self._db._engine
-        start = perf_counter()
         with engine.connect() as conn:
             result = conn.execute(sqlalchemy.text(sql))
             rows = result.fetchmany(self._max_rows)
             columns = list(result.keys())
-        elapsed_ms = (perf_counter() - start) * 1000
-        data = [dict(zip(columns, row)) for row in rows]
-        return data, elapsed_ms
+        return [dict(zip(columns, row)) for row in rows]
 
     def get_sample_rows(self, table_name: str, n: int = 3) -> list[dict[str, Any]]:
-        data, _ = self.execute_query(
-            f"SELECT * FROM {table_name} LIMIT {n}"
-        )
-        return data
+        return self.execute_query(f"SELECT * FROM {table_name} LIMIT {n}")
 
     def get_langchain_db(self) -> SQLDatabase:
         return self._db

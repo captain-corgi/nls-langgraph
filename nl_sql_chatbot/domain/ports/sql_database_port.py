@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
-class DatabaseRepository(ABC):
+class SqlDatabasePort(ABC):
     @abstractmethod
     def get_table_names(self) -> list[str]: ...
 

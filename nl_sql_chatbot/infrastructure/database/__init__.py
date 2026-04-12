@@ -1,3 +1,3 @@
-from .sql_database_repository import SqlDatabaseRepository
+from .sql_database_adapter import SqlDatabaseAdapter
 
-__all__ = ["SqlDatabaseRepository"]
+__all__ = ["SqlDatabaseAdapter"]

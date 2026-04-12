@@ -1,3 +1,3 @@
-from .chat_memory_repository import InMemoryChatRepository
+from .in_memory_chat_history import InMemoryChatHistory
 
-__all__ = ["InMemoryChatRepository"]
+__all__ = ["InMemoryChatHistory"]

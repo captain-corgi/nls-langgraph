@@ -3,7 +3,7 @@ from uuid import UUID
 
 from domain.entities.chat_message import ChatMessage, MessageRole
 from domain.entities.query_result import QueryResult
-from infrastructure.memory.chat_memory_repository import InMemoryChatRepository
+from infrastructure.memory.in_memory_chat_history import InMemoryChatHistory
 
 
 class TestChatMessage:
@@ -46,9 +46,9 @@ class TestQueryResult:
         assert "success" in d
 
 
-class TestInMemoryChatRepository:
+class TestInMemoryChatHistory:
     def test_save_and_retrieve(self):
-        repo = InMemoryChatRepository()
+        repo = InMemoryChatHistory()
         msg1 = ChatMessage.user("Hello")
         msg2 = ChatMessage.assistant("Hi")
         repo.save_message("s1", msg1)
@@ -59,7 +59,7 @@ class TestInMemoryChatRepository:
         assert history[1].content == "Hi"
 
     def test_sessions_are_isolated(self):
-        repo = InMemoryChatRepository()
+        repo = InMemoryChatHistory()
         repo.save_message("a", ChatMessage.user("A"))
         repo.save_message("b", ChatMessage.user("B"))
         assert len(repo.get_history("a")) == 1
@@ -68,7 +68,7 @@ class TestInMemoryChatRepository:
         assert repo.get_history("b")[0].content == "B"
 
     def test_clear_session(self):
-        repo = InMemoryChatRepository()
+        repo = InMemoryChatHistory()
         repo.save_message("s1", ChatMessage.user("Hello"))
         repo.clear_session("s1")
         assert repo.get_history("s1") == []
